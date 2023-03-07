@@ -1,0 +1,243 @@
+---
+title: "Folha de Passagens - VEMSE/DF"
+output: 
+  flexdashboard::flex_dashboard:
+
+    vertical_layout: fill
+    runtime: shiny
+    css: styles.css
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readxl)
+library(stringr)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+library(shiny)
+library(shinyWidgets)
+library(plotly)
+library(DT)
+```
+
+```{r read_data, cache= TRUE}
+
+bd <- read_excel("../../../data/Banco de Dados Consolidado.xlsx", na = "-", 
+                 sheet = "Banco de Dados",
+                 col_names = T, 
+                 guess_max = 1048576) # 1048576 é o total máximo de linhas do excel
+
+colnames(bd) <- str_replace_all(colnames(bd), "[[:punct:]]", " ")
+colnames(bd) <- str_replace_all(names(bd), c(" " = ".", "/" = ".", "-" = ".", "," = "" ))
+bd <- bd %>% rename("TIPO.DE.DECISAO" = 'TIPO.DE.DECISÃO\r\n..mérito.x.remissão.')
+bd$SEXO <- sapply(bd$SEXO, function(v){if(is.character(v)) return(toupper(v)) else return(v)})
+
+```
+
+```{r subsets_ip, include=FALSE}
+#Para estudos sobre Internação Provisória
+ip <- bd %>%
+        dplyr::select("CNJ.PEMSE", "NOME", "NOME.MAE", "DATA.APREENSÃO",
+                      "DATA.DA.DECISÃO...INTERNAÇÃO.PROVISÓRIA", 
+                      "DATA.LIBERAÇÃO","DATA.DA.DECISÃO...PRORROGAÇÃO.DO.PRAZO.DE.IP",
+                      "CONTROLE.DO.PRAZO.DE.LIBERAÇÃO.IP",
+                      "INTERNAÇÃO.PROVISÓRIA..dias.", "ARQ.TRAM", "DATA.DA.DECISÃO.SENTENÇA", 
+                      "MEDIDA.APLICADA" ) %>%
+        rename("Decisão.IP" = DATA.DA.DECISÃO...INTERNAÇÃO.PROVISÓRIA, "Data.Prorrogação" = DATA.DA.DECISÃO...PRORROGAÇÃO.DO.PRAZO.DE.IP,
+               "Data.Liberação.Controle" = CONTROLE.DO.PRAZO.DE.LIBERAÇÃO.IP, "IP.dias"= INTERNAÇÃO.PROVISÓRIA..dias.) %>%
+        filter(!is.na(Decisão.IP) | !is.na(IP.dias))
+
+ip$DATA.LIBERAÇÃO <- strptime(ip$DATA.LIBERAÇÃO, "%Y-%m-%d")
+ip$Decisão.IP <- strptime(ip$Decisão.IP, "%Y-%m-%d")
+ip$DATA.DA.DECISÃO.SENTENÇA <- strptime(ip$DATA.DA.DECISÃO.SENTENÇA, "%Y-%m-%d")
+
+
+# Internação provisória em tramitação
+ip_tram <- ip %>% filter(ARQ.TRAM == "Tramitação", !is.na(Decisão.IP), is.na(DATA.LIBERAÇÃO)) 
+```
+
+```{r ocorrencias}
+ocorrencias <- bd %>% select("CNJ.PEMSE", "NOME", "SEXO", "ARQ.TRAM", "NOME.MAE",
+                         "MEDIDA.APLICADA",
+                           
+                         "DATA.DA.EVASÃO.1", "DATA.DA.EVASÃO.2", "DATA.DA.EVASÃO.3",
+                         "DATA.DA.EVASÃO.4","DATA.DA.EVASÃO.5", "DATA.DA.EVASÃO.6",
+                         "DATA.DA.EVASÃO.7", "DATA.DA.EVASÃO.8","DATA.DA.EVASÃO.9",
+                         "DATA.DA.EVASÃO.10",
+                         
+                         "DATA.DA.VINCULAÇÃO.1", "DATA.DA.VINCULAÇÃO.2",
+                         "DATA.DA.VINCULAÇÃO.3","DATA.DA.VINCULAÇÃO.4", 
+                         "DATA.DA.VINCULAÇÃO.5", "DATA.DA.VINCULAÇÃO.6",
+                         "DATA.DA.VINCULAÇÃO.7", "DATA.DA.VINCULAÇÃO.8",
+                         "DATA.DA.VINCULAÇÃO.9", "DATA.DA.VINCULAÇÃO.10",
+                         
+                         "DATA.DA.SUSPENSÃO.1", "DATA.DA.SUSPENSÃO.2",
+                         "DATA.DE.TÉRMINO.DA.SUSPENSÃO.1", "DATA.DE.TÉRMINO.DA.SUSPENSÃO.2", 
+                           
+                         "DATA.DA.CONCESSÃO.DO.BENEFÍCIO.1","DATA.DA.CONCESSÃO.DO.BENEFÍCIO.2",
+                         "DATA.DA.CONCESSÃO.DO.BENEFÍCIO.3","DATA.DA.CONCESSÃO.DO.BENEFÍCIO.4", 
+                         "DATA.DE.CONCESSÃO.DE.SAÍDAS.SISTEMÁTICAS",
+                         "DATA.DE.APLICAÇÃO.DE.MEDIDA.PROTETIVA",
+                         "DATA.DA.PROGRESSÃO.REGRESSÃO",
+                         
+                         "INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.1",
+                         "INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.2", 
+                         "INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.3",
+                         "INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.4",
+                         
+                         "MOTIVO.DA.EXTINÇÃO"
+                         
+                           
+  ) %>%
+    
+        rename("Data Sistemática" = DATA.DE.CONCESSÃO.DE.SAÍDAS.SISTEMÁTICAS,
+               "Data Saída 1" = DATA.DA.CONCESSÃO.DO.BENEFÍCIO.1,
+               "Data Saída 2" = DATA.DA.CONCESSÃO.DO.BENEFÍCIO.2,
+               "Data Saída 3" = DATA.DA.CONCESSÃO.DO.BENEFÍCIO.3,
+               "Data Saída 4" = DATA.DA.CONCESSÃO.DO.BENEFÍCIO.4, 
+               "Situação" = ARQ.TRAM, "MÃE" = NOME.MAE, "MEDIDA" = MEDIDA.APLICADA,
+               "Data Evasão 1" = DATA.DA.EVASÃO.1, "Data Evasão 2" = DATA.DA.EVASÃO.2,
+               "Data Evasão 3" = DATA.DA.EVASÃO.3, "Data Evasão 4" = DATA.DA.EVASÃO.4,
+               "Data Evasão 5" = DATA.DA.EVASÃO.5, "Data Evasão 6" = DATA.DA.EVASÃO.6,
+               "Data Evasão 7" = DATA.DA.EVASÃO.7, "Data Evasão 8" = DATA.DA.EVASÃO.8,
+               "Data Evasão 9" = DATA.DA.EVASÃO.9, "Data Evasão 10" = DATA.DA.EVASÃO.10,
+               "Data Evasão 1 (Retorno)" = DATA.DA.VINCULAÇÃO.1, 
+               "Data Evasão 2 (Retorno)" = DATA.DA.VINCULAÇÃO.2,
+               "Data Evasão 3 (Retorno)" = DATA.DA.VINCULAÇÃO.3, 
+               "Data Evasão 4 (Retorno)" = DATA.DA.VINCULAÇÃO.4,
+               "Data Evasão 5 (Retorno)" = DATA.DA.VINCULAÇÃO.5, 
+               "Data Evasão 6 (Retorno)" = DATA.DA.VINCULAÇÃO.6,
+               "Data Evasão 7 (Retorno)" = DATA.DA.VINCULAÇÃO.7, 
+               "Data Evasão 8 (Retorno)" = DATA.DA.VINCULAÇÃO.8,
+               "Data Evasão 9 (Retorno)" = DATA.DA.VINCULAÇÃO.9, 
+               "Data Evasão 10 (Retorno)" = DATA.DA.VINCULAÇÃO.10,
+               "Data Suspensão 1" = DATA.DA.SUSPENSÃO.1, 
+               "Data Suspensão 2" = DATA.DA.SUSPENSÃO.2,
+               "Data Suspensão 1 (Término)" = DATA.DE.TÉRMINO.DA.SUSPENSÃO.1, 
+               "Data Suspensão 2 (Término)" = DATA.DE.TÉRMINO.DA.SUSPENSÃO.2, 
+               "Data Internação Sanção 1"= INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.1, 
+               "Data Internação Sanção 2"= INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.2,
+               "Data Internação Sanção 3"= INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.3,
+               "Data Internação Sanção 4"= INTERNAÇÃO.SANÇÃO...DATA.DA.APREENSÃO.4, 
+               "Data Medida Protetiva"=DATA.DE.APLICAÇÃO.DE.MEDIDA.PROTETIVA, 
+               "Data Progressão/Regressão" = DATA.DA.PROGRESSÃO.REGRESSÃO,
+               
+               "Motivo Extinção" = MOTIVO.DA.EXTINÇÃO,
+               "Autos" = CNJ.PEMSE
+              
+        ) %>%
+        pivot_longer(
+                cols = starts_with("Data"),
+                names_to = "Ocorrência",
+                names_prefix = "Data",
+                values_to = "Data da Ocorrência",
+                values_drop_na = TRUE)
+ 
+```
+
+
+
+{data-orientation=rows}
+===========
+Column {data-height=15} 
+-----------------------------------------------------------------------
+  
+```{r select inputs Adolescentes}
+
+selectizeInput('adol1', tags$b("Escolha o nome do adolescente"), multiple = F, choices = NULL, 
+               selected= NULL, width = "280px")
+server = observe({
+  updateSelectizeInput(session, 'adol1', choices = bd$NOME, selected= "", server = TRUE) 
+})
+```
+
+Column {data-height=100} 
+------------
+### **Total de PEMSE** 
+```{r}
+renderValueBox({
+  pemse = bd %>% filter(NOME == input$adol1)%>%
+    count ()
+  valueBox(pemse, icon = "fas fa-folder")  
+})
+```
+
+### **PEMSE Ativos** 
+```{r}
+renderValueBox({
+  pemse = bd %>% filter(NOME == input$adol1, ARQ.TRAM == "Tramitação")%>%
+    count ()
+  valueBox(pemse, icon = "fas fa-gavel") 
+})
+```
+
+### **21 anos** 
+```{r}
+renderValueBox({
+  
+  bd$DATA.PARA.COMPLETAR.21.ANOS <- format(as.Date(bd$DATA.PARA.COMPLETAR.21.ANOS), "%d/%m/%Y")  
+  anos = bd %>% with(DATA.PARA.COMPLETAR.21.ANOS[NOME == input$adol1 & ARQ.TRAM == "Tramitação"]) %>% head(1)
+  
+  req(input$adol1)
+  valueBox(if(input$adol1 == 0){"NA"}
+           else {anos}, icon = "fas fa-calendar-alt")
+})
+```
+
+
+### **Unidade Atual** 
+```{r}
+renderValueBox({
+  atual = bd %>% with(UNIDADE.DE.CUMPRIMENTO.ATUAL[NOME == input$adol1 & ARQ.TRAM == "Tramitação"]) %>% head(1)
+   
+  req(input$adol1)
+  
+  valueBox(if(input$adol1 == 0){"NA"}
+           else {atual}, icon = "fas fa-check")
+})
+```
+
+
+
+Column {.tabset}
+---------
+### <font size="4"> **Passagens pela VEMSE** </font> 
+```{r Tabela Geral}
+
+dataTableOutput("folha", height = "100%")
+
+output$folha <- renderDataTable({
+        
+bd$DATA.DA.DECISÃO.SENTENÇA <- as.Date(bd$DATA.DA.DECISÃO.SENTENÇA )
+bd$DATA.DA.EXTINÇÃO <- as.Date (as.numeric(bd$DATA.DA.EXTINÇÃO), origin = "1899-12-30") # windows excel origin
+ 
+bd %>% select("CNJ.PEMSE", "NOME", "SEXO","ARQ.TRAM", "TIPO.DE.DECISAO", "NOME.MAE", 
+              "MEDIDA.APLICADA", "DATA.DA.DECISÃO.SENTENÇA", "DATA.DA.EXTINÇÃO", "MOTIVO.DA.EXTINÇÃO") %>%
+        rename("Autos" = CNJ.PEMSE, "Situação" = ARQ.TRAM, "Mãe" = NOME.MAE, 
+               "Medida" = MEDIDA.APLICADA, "Data Decisão"="DATA.DA.DECISÃO.SENTENÇA", 
+               "Data Extinção" = DATA.DA.EXTINÇÃO,"Motivo Extinção" = MOTIVO.DA.EXTINÇÃO,
+               "Tipo" = TIPO.DE.DECISAO
+        ) %>%
+        filter(NOME == input$adol1) %>% 
+        datatable (options = list(lengthMenu = c(7, 10, 20), pageLength = 7), class = 'display')
+
+})
+```
+
+### <font size="4"> **Beneficios e Ocorrências** </font> 
+```{r Ocorrências}
+dataTableOutput("adolescente1", height = "100%") 
+
+output$adolescente1 <- renderDataTable({
+        
+        ocorrencias$"Data da Ocorrência" <- format(as.Date(ocorrencias$"Data da Ocorrência"), "%d/%m/%Y")  
+        
+        ocorrencias %>% filter(NOME == input$adol1)%>%
+                datatable (options = list(lengthMenu = c(10, 20, 50), pageLength = 10), class = 'display')
+})
+```
+
+
+
+
