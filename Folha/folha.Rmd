@@ -23,7 +23,7 @@ library(DT)
 
 ```{r read_data, cache= TRUE}
 
-bd <- read_excel("../../../data/Banco de Dados Consolidado.xlsx", na = "-", 
+bd <- read_excel("../../data/Banco de Dados Consolidado.xlsx", na = "-", 
                  sheet = "Banco de Dados",
                  col_names = T, 
                  guess_max = 1048576) # 1048576 é o total máximo de linhas do excel
@@ -138,7 +138,7 @@ ocorrencias <- bd %>% select("CNJ.PEMSE", "NOME", "SEXO", "ARQ.TRAM", "NOME.MAE"
 
 
 
-{data-orientation=rows}
+{data-orientation=rows} 
 ===========
 Column {data-height=15} 
 -----------------------------------------------------------------------

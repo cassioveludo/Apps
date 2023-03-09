@@ -28,7 +28,7 @@ library(wordcloud2)
 ####################
 
 #To run localy (puxando do servidor): ##### OneDrive #####
-bd <- read_excel("../../../data/Banco de Dados Consolidado.xlsx", na = "-", sheet = "Banco de Dados", 
+bd <- read_excel("../../data/Banco de Dados Consolidado.xlsx", na = "-", sheet = "Banco de Dados", 
                  col_names = T, guess_max = 1048576) # 1048576 é o total máximo de linhas do excel
 
 colnames(bd) <- str_replace_all(colnames(bd), "[[:punct:]]", " ")
@@ -126,10 +126,7 @@ server <- function(input, output) {
                pemse = bd %>%
                        summarize(PEMSE.TRIBUNAL = sum(!is.na(PEMSE.TRIBUNAL)) + length(PEMSE.TRIBUNAL [PEMSE.TRIBUNAL == "-"]))
                 
-              valueBox(pemse, "sub")
-                
-                
-       })
+              valueBox(pemse, "sub")})
                    
         
         
