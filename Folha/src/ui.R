@@ -8,7 +8,7 @@ ui <- dashboardPage(
         dashboardSidebar(disable = T),
         
         dashboardBody(
-                box(width = 13,
+                box(width = 12,
                     
                     selectizeInput('adol1', tags$b("Escolha o nome do adolescente"), multiple = F, choices = NULL, 
                                    selected= NULL, width = "280px"),
