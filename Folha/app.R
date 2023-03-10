@@ -11,7 +11,4 @@
 ##############
 
 
-
-library(shiny)
-
-shinyAppDir("src")
+shiny::shinyAppDir("src")
