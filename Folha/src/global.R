@@ -1,20 +1,16 @@
-#####################
-# loading libraries #
-#####################
-library(flexdashboard)
-library(shinydashboard)
-library(readxl)
-library(stringr)
-library(dplyr)
-library(tidyverse)
-library(lubridate)
-library(shiny)
-library(shinyWidgets)
-library(plotly)
-library(DT)
-library(wordcloud2)
-library(modules)
-####################
+# Package names
+packages <- c("flexdashboard", "shinydashboard", "readxl", "stringr", "dplyr", 
+              "tidyverse", "lubridate", "shiny", "lubridate", "shinyWidgets", 
+              "plotly", "DT", "wordcloud2", "modules")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+        install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 
 # Constants
