@@ -21,7 +21,9 @@ CONST <- use("constantes.R")
 ### data ###
 ############
 
-filePath = "../../../Library/Mobile Documents/com~apple~CloudDocs/Documents/R/VEMSE/data/Banco de Dados Consolidado.xlsx"
+
+
+filePath = "../data/Banco de Dados Consolidado.xlsx"
 bd <- read_excel(filePath, 
                  na = "-", 
                  sheet = "Banco de Dados",
