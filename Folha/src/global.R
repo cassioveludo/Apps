@@ -21,7 +21,9 @@ CONST <- use("constantes.R")
 ### data ###
 ############
 
-bd <- read_excel("../../Banco de Dados Consolidado.xlsx", na = "-", 
+filePath = "../../Library/Mobile Documents/com~apple~CloudDocs/Documents/R/VEMSE/data/Banco de Dados Consolidado.xlsx"
+bd <- read_excel(filePath, 
+                 na = "-", 
                  sheet = "Banco de Dados",
                  col_names = T, 
                  guess_max = 1048576) # 1048576 é o total máximo de linhas do excel
