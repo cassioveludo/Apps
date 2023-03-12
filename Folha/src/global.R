@@ -23,7 +23,7 @@ CONST <- use("constantes.R")
 
 
 
-filePath = list.files("../data/Banco de Dados Consolidado.xlsx", pattern = "xlsx", full.names = TRUE)
+filePath = list.files("../data/Banco de Dados Consolidado.xlsx", pattern = "xlsx", full.names = FALSE)
 bd <- read_excel(filePath, 
                  na = "-", 
                  sheet = "Banco de Dados",
